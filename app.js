@@ -1,54 +1,89 @@
-let ENV = "";
-
-if (process.env.NODE_ENV === "production") {
-  require("dotenv").config({ path: "./.env.production" });
-  ENV = process.env.ENV || "PRODUCTION";
-} else {
-  require("dotenv").config({ path: "./.env" });
-  ENV = process.env.ENV || "LOCAL";
-}
-
+require("./utils/nodeEnv");
+const cors = require("cors");
+const compression = require("compression");
 const express = require("express");
 
-const { checkLogFolder } = require("./utils/log_service");
-const { logger: logMiddleware } = require("./middleware/log.js");
-const homeMiddleware = require("./middleware/home.js");
-const versionCheck = require("./middleware/version_check.js");
-const errorMiddleware = require("./middleware/error.js");
-const pathErrorMiddleware = require("./middleware/path_error.js");
-
 const app = express();
-const PORT = process.env.PORT || 22001;
 
+const PORT = process.env.PORT || 8000;
+const NODE_ENV = process.env.NODE_ENV || "local";
+console.log({ NODE_ENV });
+
+app.use(cors());
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const { StartLogger } = require("./utils/logService.js");
+// const { syncDB_force, testConnect } = require("./service/database");
 
-app.use(logMiddleware);
+const requestLogger = require("./middleware/logger.js");
+const homeMiddleware = require("./middleware/home.js");
+const { basicAuth: basicAuthMiddleware } = require("./middleware/authenticate");
+const versionCheck = require("./middleware/versionCheck.js");
+const errorMiddleware = require("./middleware/errorResponse.js");
+const pathErrorMiddleware = require("./middleware/pathError.js");
 
-// Homepage
+/* ===== SCHEDULE ===== */
+require("./utils/nodeSchedule/schedule.js");
+
+/* ===== LOG ===== */
+try {
+  StartLogger();
+} catch (error) {
+  console.log(error);
+}
+app.use(requestLogger);
+
+/* ===== HOMEPAGE ===== */
 app.get("/", homeMiddleware);
+
+/* ===== TEST_API ===== */
+app.get("/test", homeMiddleware);
+
+/* ===== API HOOK ===== */
+
+/* ===== FOR ZOMBIE RESTART ===== */
 app.get("/api/version/001", versionCheck);
 
-// Error Path
+/* ===== ROUTER ===== */
+
+/* ===== ERROR ===== */
 app.use(errorMiddleware);
 
-// Incorrect Path
+/* ===== INCORRECT PATH ===== */
 app.use("*", pathErrorMiddleware);
 
 app.listen(PORT, async () => {
-  await checkLogFolder();
+  try {
+    // await syncDB_force(false);
+    // const db_test = await testConnect();
 
-  console.log(
-    `
+    // if (!db_test) {
+    //   throw new Error("DB connection failed");
+    // }
+
+    console.log(
+      `
   =====================================
 
+    DB connection success
     Server is running on port: ${PORT}
-    Currently running mode: ${ENV}
+    Currently running mode: ${NODE_ENV.toUpperCase()}
 
   =====================================
 `
-  );
+    );
+  } catch (error) {
+    console.log(
+      `
+    =====================================
+  
+      Server error on start up: 
+      ${error}
+  
+    =====================================
+  `
+    );
+  }
 });

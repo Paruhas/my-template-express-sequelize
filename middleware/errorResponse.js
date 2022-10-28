@@ -1,8 +1,7 @@
-const { ErrorService } = require("../utils/error_service.js");
+const { ErrorService } = require("../utils/errorFormat.js");
+const { writeLog_throw } = require("../utils/logService.js");
 
 module.exports = (err, req, res, next) => {
-  const resError = ErrorService(err);
-
   let resHTTPCode = 500;
 
   if (err.httpStatusCode) {
@@ -14,9 +13,17 @@ module.exports = (err, req, res, next) => {
   if (err.name === "TokenExpiredError" || err.name === "JsonWebTokenError") {
     resHTTPCode = 401; // ดัก Error จากการ Auth Token
   }
-  if (err.name === "SequelizeValidationError") {
+  if (
+    err.name === "SequelizeValidationError" ||
+    err.name === "SequelizeUniqueConstraintError"
+  ) {
     resHTTPCode = 400;
+    err.message = (err.errors[0] && err.errors[0].message) || err.message;
   }
+
+  const resError = ErrorService(err);
+
+  writeLog_throw(err, resHTTPCode);
 
   return res.status(resHTTPCode).json(resError);
 };
