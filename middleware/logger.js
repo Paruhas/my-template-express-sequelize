@@ -12,9 +12,14 @@ module.exports = (req, res, next) => {
 
     console.log(`[START]${id}|${date} >>> ${method} => ${originalUrl} : -ms`);
     if (process.env.NODE_ENV !== "production") {
-      console.log(`| params: ${JSON.stringify(params)} |`);
-      console.log(`| query: ${JSON.stringify(query)} |`);
-      console.log(`| body: ${JSON.stringify(body)} |`);
+      if (
+        originalUrl.search("login") === -1 &&
+        originalUrl.search("register") === -1
+      ) {
+        console.log(`| params: ${JSON.stringify(params)} |`);
+        console.log(`| query: ${JSON.stringify(query)} |`);
+        console.log(`| body: ${JSON.stringify(body)} |`);
+      }
     }
 
     res.on("finish", () => {
