@@ -8,7 +8,7 @@ scheduleJob("0 */1 * * * *", async function () {
   try {
     showTime();
   } catch (error) {
-    handlerError(error);
+    handlerError(error), "0 */1 * * * *";
   }
 });
 
@@ -17,14 +17,14 @@ scheduleJob("0 0 17 * * *", async function () {
   try {
     StartLogger();
   } catch (error) {
-    handlerError(error);
+    handlerError(error, "0 0 17 * * *");
   }
 });
 
-function handlerError() {
-  if (error && error.message) {
-    console.log(error);
+function handlerError(error, scheduleJob) {
+  if (error && error.message && scheduleJob) {
+    console.error(error);
 
-    writeLog_throw(error, "scheduleJob_(0 */5 * * * *)");
+    writeLog_throw(error, scheduleJob);
   }
 }
