@@ -67,7 +67,7 @@ app.listen(PORT, async () => {
       `
   =====================================
 
-    DB connection success
+    Sever Starting Success
     Server is running on port: ${PORT}
     Currently running mode: ${NODE_ENV.toUpperCase()}
 
